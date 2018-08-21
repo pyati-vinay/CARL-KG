@@ -87,8 +87,8 @@ object Utils {
    * @param nodes	- list of nodes
    * @param idNodes	- a string of array buffer
    * @param subject = subject string
-   * @param  predicate = predicate string
-   * @paramobject = object string
+   * @param predicate = predicate string
+   * @param object = object string
    * @return  - true or false
    */
   def contains(
