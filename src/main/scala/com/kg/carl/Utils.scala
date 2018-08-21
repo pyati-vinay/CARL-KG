@@ -86,9 +86,9 @@ object Utils {
    * @param pso	- PredicateSubjectObject map
    * @param nodes	- list of nodes
    * @param idNodes	- a string of array buffer
-   * @subject = subject string
-   * @predicate = predicate string
-   * @object = object string
+   * @param subject = subject string
+   * @param  predicate = predicate string
+   * @paramobject = object string
    * @return  - true or false
    */
   def contains(
@@ -108,9 +108,9 @@ object Utils {
    *
    * @param pso	- PredicateSubjectObject map
    * @param nodes	- list of nodes
-   * @subject = subject string
-   * @predicate = predicate string
-   * @object = object string
+   * @param subject - subject string
+   * @param predicate - predicate string
+   * @param object - object string
    * @return  - true or false
    */
   def contains(
@@ -126,8 +126,8 @@ object Utils {
    * Return a boolean checking if the subject exists in Expected cardinality map
    *
    * @param ecpv	- expected cardinality by property value map
-   * @s - subject id
-   * @p - predicate id
+   * @param s - subject id
+   * @param p - predicate id
    * @return  - true or false
    */
   def hasExpectedCardinality(
@@ -152,8 +152,8 @@ object Utils {
    *
    * @param ecpv	- expected cardinality by property value map
    * @param nodes	- list of nodes
-   * @s - subject id
-   * @p - predicate id
+   * @param s - subject id
+   * @param p - predicate id
    * @return  - Int
    */
   def getExpectedCardinality(
@@ -178,7 +178,7 @@ object Utils {
    * Return a boolean checking if the subject exists in ArrayBuffer of maps
    *
    * @param arrBuf	- ArrayBuffer of map
-   * @subject - subject id
+   * @param subject - subject id
    * @return  - true or false
    */
   def isExisting(
@@ -197,7 +197,7 @@ object Utils {
    * Return a size checking if the subject exists in ArrayBuffer of maps
    *
    * @param arrBuf	- ArrayBuffer of map
-   * @subject - subject id
+   * @param subject - subject id
    * @return  - Int
    */
   def getSize(
@@ -216,7 +216,7 @@ object Utils {
    * Return a objects checking if the element exists in ArrayBuffer of maps
    *
    * @param arrBuf	- ArrayBuffer of map
-   * @subject - id
+   * @param subject - id
    * @return  - ArrayBuffer of objects
    */
   def getObjects(
@@ -285,9 +285,9 @@ object Utils {
   /**
    * The case class for triples
    *
-   * @subject - subject string
-   * @predicate - predicate string
-   * @object - object string
+   * @param subject - subject string
+   * @param predicate - predicate string
+   * @param object - object string
    */
   case class Triples(
     subject:   String,
@@ -296,9 +296,9 @@ object Utils {
   /**
    * The case class for cardinalities
    *
-   * @subject - subject string
-   * @predicate - predicate string
-   * @object - object string
+   * @param subject - subject string
+   * @param predicate - predicate string
+   * @param object - object string
    */
   case class Cardinalities(
     subject:     String,
