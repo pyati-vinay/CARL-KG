@@ -1,4 +1,4 @@
-Conmpleteness Aware Rule Learning
-=============================
+Completeness Aware Rule Learning
+================================
 
 
