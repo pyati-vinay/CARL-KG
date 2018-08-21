@@ -146,10 +146,10 @@ object Algorithm {
                     t =>
                       val expected_cardinality = getExpectedCardinality(ecpv, t._1, rule.r)
                       if (expected_cardinality.asInstanceOf[Int] != 0) {
-                        val actual_triples_number = pso(rule.r)(t._1).size
+                        val actual_triples_number = getSize(pso(rule.r),t._1)//pso(rule.r)(t._1).size
                         var missing_triples = 0
-                        if (expected_cardinality.asInstanceOf[Int] > actual_triples_number) {
-                          missing_triples = expected_cardinality.asInstanceOf[Int] - actual_triples_number
+                        if (expected_cardinality > actual_triples_number) {
+                          missing_triples = expected_cardinality - actual_triples_number
                         }
                         val triples_added_by_the_rule = t._2
                         if (triples_added_by_the_rule > missing_triples) {

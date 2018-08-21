@@ -38,15 +38,13 @@ object Preprocessor {
     val triples = sc.textFile("/home/hduser/spark/CARL-KG/src/main/resources/test.tsv")
     val cardinalities = sc.textFile("/home/hduser/spark/CARL-KG/src/main/resources/newb.tsv")
 
-    val parsedTriples = triples.map(parseTriples)
-
-    println("Done Parsing Input Triples")
+    val parsedTriples = triples.map(parseTriples).sortBy(_.predicate)
 
     println("Number of Triples parsed: " + parsedTriples.count())
 
     println("=============================================")
 
-    val parsedCardinalities = cardinalities.map(parseCardinalities)
+    val parsedCardinalities = cardinalities.map(parseCardinalities).sortBy(_.predicate)
 
     println("Number of Cardinalities parsed: " + parsedCardinalities.count())
 
@@ -122,7 +120,6 @@ object Preprocessor {
     val pso = AccPSO.value.get(0)
     val ecpv = AccECPV.value.get(0)
 
-    println(pso.size)
     val output = mineRulesWithCardinalities(pso, nodes, idNodes, properties, ecpv, 1000)
     
     val file = new File("output.tsv")
