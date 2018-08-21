@@ -1,13 +1,15 @@
 package com.kg.carl
-
-import com.kg.carl.IdStore._
+import com.kg.carl.Utils._
 import util.control.Breaks._
 import scala.collection.mutable._
 import com.kg.carl.Preprocessor._
 
 object Algorithm {
 
-  case class ScoredRule(p: Int, q: Int, r: Int) {
+  case class ScoredRule(
+    p: Int,
+    q: Int,
+    r: Int) {
     var support = 0
     var body_support = 0
     var head_coverage = 0.0
@@ -25,7 +27,12 @@ object Algorithm {
   val MIN_SUPPORT = 10
   val CONFIDENCE_INCOMPLETENESS_FACTOR = 0.5
 
-  def doMining(pso: LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]]], nodes: ListBuffer[String], id_for_nodes: LinkedHashMap[String, Int], properties: Set[Int], expected_cardinalities_by_property_value: LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, Int]]], numRules: Int): ListBuffer[ScoredRule] = {
+  def mineRulesWithCardinalities(
+    pso:   LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]]],
+    nodes: ArrayBuffer[String], id_for_nodes: LinkedHashMap[String, Int],
+    properties: TreeSet[Int],
+    ecpv:       LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, Int]]],
+    numRules:   Int): ListBuffer[ScoredRule] = {
     val entities = Set[Int]()
     val property_instances_count = LinkedHashMap[Int, Int]().withDefaultValue(0)
     val entityCount = getNumberOfEntities(nodes)
@@ -46,10 +53,10 @@ object Algorithm {
     }
     val number_of_expected_triple_per_relation = Map[Int, Int]()
     println(number_of_expected_triple_per_relation)
-    getProperties(properties).foreach {
+    properties.foreach {
       kv =>
         for (subject <- 0 to entityCount) {
-          val expectedCardinality = getExpectedCardinality(expected_cardinalities_by_property_value, subject, kv)
+          val expectedCardinality = getExpectedCardinality(ecpv, subject, kv)
           if (expectedCardinality != 0) {
             val actualCardinality = 0
             if (isExisting(pso(kv), subject)) {
@@ -69,11 +76,11 @@ object Algorithm {
     val rules = ListBuffer[ScoredRule]()
     val empty_entity_set = ArrayBuffer[Int]()
 
-    getProperties(properties).foreach {
+    properties.foreach {
       p =>
-        getProperties(properties).foreach {
+        properties.foreach {
           q =>
-            getProperties(properties).foreach {
+            properties.foreach {
               r =>
                 breakable {
                   val rule = new ScoredRule(p, q, r)
@@ -97,7 +104,7 @@ object Algorithm {
                               }
                               if (!z_created.isEmpty) {
                                 val z_actual = getObjects(pso(r), x)
-                                val expects_cardinality = hasExpectedCardinality(expected_cardinalities_by_property_value, x, r)
+                                val expects_cardinality = hasExpectedCardinality(ecpv, x, r)
                                 rule.body_support += z_created.size
                                 if (!z_actual.isEmpty) {
                                   pcaSupport += z_created.size
@@ -107,8 +114,13 @@ object Algorithm {
                                     if (z_actual.contains(z)) {
                                       rule.support = rule.support + 1
                                     } else if (expects_cardinality) {
-                                      facts_added_by_subject_with_cardinality(x) = facts_added_by_subject_with_cardinality(x) + 1
-                                      println(facts_added_by_subject_with_cardinality(x))
+                                      if (facts_added_by_subject_with_cardinality.contains(x)) {
+                                        val m = facts_added_by_subject_with_cardinality.apply(x) + 1
+                                        facts_added_by_subject_with_cardinality.put(x, m)
+                                      } else {
+                                        facts_added_by_subject_with_cardinality.put(x, 1)
+                                      }
+
                                     }
                                 }
 
@@ -132,7 +144,7 @@ object Algorithm {
                   var triple_added_to_complete_places_count = 0
                   facts_added_by_subject_with_cardinality.foreach {
                     t =>
-                      val expected_cardinality = getExpectedCardinality(expected_cardinalities_by_property_value, t._1, rule.r)
+                      val expected_cardinality = getExpectedCardinality(ecpv, t._1, rule.r)
                       if (expected_cardinality.asInstanceOf[Int] != 0) {
                         val actual_triples_number = pso(rule.r)(t._1).size
                         var missing_triples = 0
