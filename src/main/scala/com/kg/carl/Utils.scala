@@ -86,9 +86,9 @@ object Utils {
    * @param pso	- PredicateSubjectObject map
    * @param nodes	- list of nodes
    * @param idNodes	- a string of array buffer
-   * @param subject = subject string
-   * @param predicate = predicate string
-   * @param object = object string
+   * @param subject - subject string
+   * @param predicate - predicate string
+   * @param object - object string
    * @return  - true or false
    */
   def contains(
@@ -125,7 +125,7 @@ object Utils {
   /**
    * Return a boolean checking if the subject exists in Expected cardinality map
    *
-   * @param ecpv	- expected cardinality by property value map
+   * @param ecpv - expected cardinality by property value map
    * @param s - subject id
    * @param p - predicate id
    * @return  - true or false
@@ -150,7 +150,7 @@ object Utils {
   /**
    * Return a cardinality checking if the subject exists in Expected cardinality map
    *
-   * @param ecpv	- expected cardinality by property value map
+   * @param ecpv - expected cardinality by property value map
    * @param nodes	- list of nodes
    * @param s - subject id
    * @param p - predicate id
@@ -177,7 +177,7 @@ object Utils {
   /**
    * Return a boolean checking if the subject exists in ArrayBuffer of maps
    *
-   * @param arrBuf	- ArrayBuffer of map
+   * @param arrBuf - ArrayBuffer of map
    * @param subject - subject id
    * @return  - true or false
    */
@@ -215,9 +215,9 @@ object Utils {
   /**
    * Return a objects checking if the element exists in ArrayBuffer of maps
    *
-   * @param arrBuf	- ArrayBuffer of map
+   * @param arrBuf - ArrayBuffer of map
    * @param subject - id
-   * @return  - ArrayBuffer of objects
+   * @return - ArrayBuffer of objects
    */
   def getObjects(
     arrBuf: ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]],
