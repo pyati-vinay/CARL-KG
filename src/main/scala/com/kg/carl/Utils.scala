@@ -8,17 +8,33 @@ import org.apache.spark.SparkContext
 import scala.math
 
 object Utils {
+  /**
+   * Given a node array return the node string.
+   *
+   * @param nodes - ArrayBuffer with all the nodes.
+   * @param id - An identifier of type integer.
+   *
+   * @return - appropriate node string
+   */
+  def getNodeForId(
+    nodes: ArrayBuffer[String],
+    id:    Int): String = {
 
-  def getNodeForId(nodes: ArrayBuffer[String], 
-      id: Int): String = {
-    
     return nodes(id)
   }
-
+  /**
+   * Return a unique id for a node entity
+   *
+   * @param nodes	- a string of array buffer as collection accumulator
+   * @param idNodes	- map of node name and size as collection accumulator
+   * @param node	- a new node as string
+   *
+   * @return  - unique id as Int
+   */
   def getIdForNode(
-    nodes:        CollectionAccumulator[ArrayBuffer[String]],
+    nodes:   CollectionAccumulator[ArrayBuffer[String]],
     idNodes: CollectionAccumulator[LinkedHashMap[String, Int]],
-    node:         String): Int = {
+    node:    String): Int = {
 
     if (idNodes.value.size() != 0) {
       if (!(idNodes.value.get(0).contains(node))) {
@@ -32,11 +48,19 @@ object Utils {
 
     return idNodes.value.get(0)(node)
   }
-
+  /**
+   * Return a unique id for a node entity
+   *
+   * @param nodes	- a string of array buffer
+   * @param idNodes	- map of node name and size
+   * @param node	- a new node as string
+   *
+   * @return  - unique id as Int
+   */
   def getIdForNode(
-    nodes:        ListBuffer[String],
+    nodes:   ListBuffer[String],
     idNodes: LinkedHashMap[String, Int],
-    node:         String): Int = {
+    node:    String): Int = {
 
     if (!(idNodes.contains(node))) {
       idNodes(node) = nodes.size
@@ -45,25 +69,50 @@ object Utils {
 
     return idNodes(node)
   }
-
+  /**
+   * Return a unique id for a node entity
+   *
+   * @param nodes	- a string of array buffer
+   *
+   * @return  - Int as size of entities
+   */
   def getNumberOfEntities(nodes: ArrayBuffer[String]): Int = {
-    
+
     return nodes.size
   }
-
+  /**
+   * Return a boolean checking if the s,p,o exists in PredicateSubjectObject map
+   *
+   * @param pso	- PredicateSubjectObject map
+   * @param nodes	- list of nodes
+   * @param idNodes	- a string of array buffer
+   * @subject = subject string
+   * @predicate = predicate string
+   * @object = object string
+   * @return  - true or false
+   */
   def contains(
-    pso:          LinkedHashMap[Int, LinkedHashMap[Int, Set[Int]]],
-    nodes:        ListBuffer[String],
-    idNodes: LinkedHashMap[String, Int],
-    subject:      String,
-    predicate:    String,
-    `object`:     String): Boolean = {
+    pso:       LinkedHashMap[Int, LinkedHashMap[Int, Set[Int]]],
+    nodes:     ListBuffer[String],
+    idNodes:   LinkedHashMap[String, Int],
+    subject:   String,
+    predicate: String,
+    `object`:  String): Boolean = {
 
     return contains(pso, getIdForNode(nodes, idNodes, subject),
       getIdForNode(nodes, idNodes, predicate),
       getIdForNode(nodes, idNodes, `object`))
   }
-
+  /**
+   * Return a boolean checking if the s,p,o exists in PredicateSubjectObject map
+   *
+   * @param pso	- PredicateSubjectObject map
+   * @param nodes	- list of nodes
+   * @subject = subject string
+   * @predicate = predicate string
+   * @object = object string
+   * @return  - true or false
+   */
   def contains(
     pso:       LinkedHashMap[Int, LinkedHashMap[Int, Set[Int]]],
     subject:   Int,
@@ -73,12 +122,19 @@ object Utils {
     return (pso(predicate).contains(subject) &&
       pso(predicate)(subject).contains(`object`))
   }
-
+  /**
+   * Return a boolean checking if the subject exists in Expected cardinality map
+   *
+   * @param ecpv	- expected cardinality by property value map
+   * @s - subject id
+   * @p - predicate id
+   * @return  - true or false
+   */
   def hasExpectedCardinality(
     ecpv: LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, Int]]],
     s:    Int,
     p:    Int): Boolean = {
-    
+
     val arrBuf = ecpv.get(p)
     arrBuf.foreach {
       iterator =>
@@ -91,7 +147,15 @@ object Utils {
     }
     return false
   }
-
+  /**
+   * Return a cardinality checking if the subject exists in Expected cardinality map
+   *
+   * @param ecpv	- expected cardinality by property value map
+   * @param nodes	- list of nodes
+   * @s - subject id
+   * @p - predicate id
+   * @return  - Int
+   */
   def getExpectedCardinality(
     ecpv: LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, Int]]],
     s:    Int,
@@ -110,11 +174,17 @@ object Utils {
     }
     return default
   }
-
+  /**
+   * Return a boolean checking if the subject exists in ArrayBuffer of maps
+   *
+   * @param arrBuf	- ArrayBuffer of map
+   * @subject - subject id
+   * @return  - true or false
+   */
   def isExisting(
-    arrBuf:     ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]],
+    arrBuf:  ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]],
     subject: Int): Boolean = {
-    
+
     arrBuf.foreach {
       iterator =>
         if (iterator.contains(subject)) {
@@ -123,11 +193,17 @@ object Utils {
     }
     return false
   }
-
+  /**
+   * Return a size checking if the subject exists in ArrayBuffer of maps
+   *
+   * @param arrBuf	- ArrayBuffer of map
+   * @subject - subject id
+   * @return  - Int
+   */
   def getSize(
-    arrBuf:     ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]],
+    arrBuf:  ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]],
     subject: Int): Int = {
-    
+
     arrBuf.foreach {
       iterator =>
         if (iterator.contains(subject)) {
@@ -136,10 +212,17 @@ object Utils {
     }
     return 0
   }
-  
+  /**
+   * Return a objects checking if the element exists in ArrayBuffer of maps
+   *
+   * @param arrBuf	- ArrayBuffer of map
+   * @subject - id
+   * @return  - ArrayBuffer of objects
+   */
   def getObjects(
     arrBuf: ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]],
-    q:   Int): ArrayBuffer[Int] = {
+    q:      Int): ArrayBuffer[Int] = {
+    
     val empty = ArrayBuffer[Int]()
     arrBuf.foreach {
       i =>
@@ -149,18 +232,28 @@ object Utils {
     }
     return empty
   }
-
+  /**
+   * generic function to update a map
+   *
+   * @param K - Key
+   * @return V - Value
+   */
   def addOrUpdate[K, V](m: LinkedHashMap[K, V], k: K, kv: (K, V),
                         f: V => V) {
-    
+
     m.get(k) match {
       case Some(e) => m.update(k, f(e))
       case None    => m += kv
     }
   }
-
+  /**
+   * triple parsing function after reading the tsv file
+   *
+   * @param parsData - data to parse
+   * @return Triples - returns a triple case class
+   */
   def parseTriples(parsData: String): Triples = {
-    
+
     val spo = parsData.split("\t")
     val subject = spo(0)
     val predicate = spo(1)
@@ -168,9 +261,14 @@ object Utils {
 
     Triples(subject, predicate, `object`)
   }
-
+  /**
+   * cardinality parsing function after reading the tsv file
+   *
+   * @param parsData - data to parse
+   * @return Cardinalities - returns a cardinlalities case class
+   */
   def parseCardinalities(parsData: String): Cardinalities = {
-    
+
     val spo = parsData.split("\t")
     val indexOfDel = spo(0).indexOf('|')
     if (spo(1) == "hasExactCardinality") {
@@ -184,12 +282,24 @@ object Utils {
     }
 
   }
-
+  /**
+   * The case class for triples
+   *
+   * @subject - subject string
+   * @predicate - predicate string
+   * @object - object string
+   */
   case class Triples(
     subject:   String,
     predicate: String,
     obj:       String)
-
+  /**
+   * The case class for cardinalities
+   *
+   * @subject - subject string
+   * @predicate - predicate string
+   * @object - object string
+   */
   case class Cardinalities(
     subject:     String,
     predicate:   String,
