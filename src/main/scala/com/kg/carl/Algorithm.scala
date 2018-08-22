@@ -249,7 +249,8 @@ object Algorithm {
                   var expectedComplete = 0
                   if (expectedTriplePerRelation.contains(rule.r)) {
                     expectedIncomplete = expectedTriplePerRelation(rule.r) / numPossibleRelations
-                    expectedComplete = (numPossibleRelations - expectedTriplePerRelation(rule.r) - propertyInstances(rule.r)) / numPossibleRelations
+					val tmp = (numPossibleRelations - expectedTriplePerRelation(rule.r) - propertyInstances(rule.r))
+                    expectedComplete =  tmp / numPossibleRelations
                   }
                   val complete = tripleAddedToCompletePlaces.asInstanceOf[Double] / rule.bodySupport
                   val incomplete = tripleAddedToMissingPlaces.asInstanceOf[Double] / rule.bodySupport
