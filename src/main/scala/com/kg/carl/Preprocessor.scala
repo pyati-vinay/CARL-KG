@@ -40,8 +40,8 @@ object Preprocessor {
     // val files = input.split(" ")
 
     // default input files
-    val triples = sc.textFile("/home/hduser/spark/CARL-KG/src/main/resources/test0.9.tsv")
-    val cardinalities = sc.textFile("/home/hduser/spark/CARL-KG/src/main/resources/b.tsv")
+    val triples = sc.textFile("../../../../resources/sample_triples.tsv")
+    val cardinalities = sc.textFile("../../../../resources/sample_cardinalities.tsv")
 
     // read and map triples. Sort by predicate
     val parsedTriples = triples.map(parseTriples).sortBy(_.predicate)
