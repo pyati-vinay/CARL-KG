@@ -26,8 +26,10 @@ This project also contains `build.sbt`.
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823 
     sudo apt-get update sudo apt-get install sbt
 - In the root folder of the repository execute the following commands.
-	1. `sbt compile`
-	2. `sbt run`
+	```sh
+	sbt compile
+	sbt run
+	```	
 	Note: If you face memeory issues or GC overhead errors increase the virtual machine's memory by setting and running the following command.
 	`env JAVA_OPTS="-Xmx[MAX_HEAP_SPACE]m" sbt run`. Replace MAX_HEAP_SPACE with memry you want to increase. MAX_HEAP_SPACE depends on your input size and the system's available memory
 
