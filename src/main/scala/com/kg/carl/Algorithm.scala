@@ -44,7 +44,7 @@ object Algorithm {
    * expose that incompleteness by introducing aware scoring functions.
    * First the algorithm count number of triples per relations and number of
    * entities, then count the number of missing triples per relation and
-   * compute support for each possible rule and body.
+   * compute support and other metrics for each possible rule and body.
    * Note: This algorithm is not dependent on any 3rd party library such AMIE.
    * Also, does not use methodology from any other Association Rule Learning.
    * It is primitive and implements the work mentioned in the paper.
