@@ -6,76 +6,129 @@ import com.kg.carl.Preprocessor._
 
 object Algorithm {
 
+  /**
+   * the case class for scored rules.
+   * all metrics declared will be evaluated/computed with the CARL algorithm
+   * the rule can be viewed as p(x,y) ∧ q(y,z) -> r(x,z)
+   *
+   * @param p - ID for p node entity
+   * @param q - ID for q node entity
+   * @param r - ID for r node entity
+   */
   case class ScoredRule(
     p: Int,
     q: Int,
     r: Int) {
     var support = 0
-    var body_support = 0
-    var head_coverage = 0.0
-    var standard_confidence = 0.0
-    var pca_confidence = 0.0
-    var completeness_confidence = 0.0
+    var bodySupport = 0
+    var headCoverage = 0.0
+    var standardConfidence = 0.0
+    var pcaConfidence = 0.0
+    var completenessConfidence = 0.0
     var precision = 0.0
     var recall = 0.0
-    var directional_metric = 0.0
-    var directional_coef = 0.0
+    var directionalMetric = 0.0
+    var directionalCoef = 0.0
   }
-
+  /**
+   * declaring metric standards as mentioned in the paper
+   */
   val MIN_HEAD_COVERAGE = 0.001
   val MIN_STANDARD_CONFIDENCE = 0.001
   val MIN_SUPPORT = 10
   val CONFIDENCE_INCOMPLETENESS_FACTOR = 0.5
 
-  def mineRulesWithCardinalities(
+  /**
+   * Mining in KGs have high degree of incompleteness, which may provide
+   * inaccurate quality of mined rules, The effort of this algorithm is to
+   * expose that incompleteness by introducing aware scoring functions.
+   * First the algorithm count number of triples per relations and number of
+   * entities, then count the number of missing triples per relation and
+   * compute support for each possible rule and body.
+   * Note: This algorithm is not dependent on any 3rd party library such AMIE.
+   * Also, does not use methodology from any other Association Rule Learning.
+   * It is primitive and implements the work mentioned in the paper.
+   *
+   * @param pso	- PredicateSubjectObject map
+   * @param nodes	- list of nodes
+   * @param properties	- a list of all ids
+   * @param ecpv - expected cardinality by property value
+   * @param numRules - max number of rules to be scored
+   * @return  - list of scored rules
+   */
+  def CARLAlgorithm(
     pso:   LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, ArrayBuffer[Int]]]],
     nodes: ArrayBuffer[String], id_for_nodes: LinkedHashMap[String, Int],
     properties: TreeSet[Int],
     ecpv:       LinkedHashMap[Int, ArrayBuffer[LinkedHashMap[Int, Int]]],
     numRules:   Int): ListBuffer[ScoredRule] = {
-    val entities = Set[Int]()
-    val property_instances_count = LinkedHashMap[Int, Int]().withDefaultValue(0)
+
+    val propertyInstances = LinkedHashMap[Int, Int]().withDefaultValue(0)
     val entityCount = getNumberOfEntities(nodes)
-    println(entityCount)
+    /*
+     * iterating and finding triple relations and entities
+     */
     pso.foreach {
       pxy =>
         pxy._2.foreach {
           xy =>
             xy.foreach {
-              e =>
-                val elem = property_instances_count.get(e._1)
-                if (elem == None) {
-                  property_instances_count(pxy._1) = property_instances_count(pxy._1) + e._2.size
+              iter =>
+                val num = propertyInstances.get(iter._1)
+                if (num == None) {
+                  propertyInstances(pxy._1) = propertyInstances(pxy._1) + iter._2.size
                 }
             }
 
         }
     }
-    val number_of_expected_triple_per_relation = Map[Int, Int]()
-    println(number_of_expected_triple_per_relation)
+    val expectedTriplePerRelation = Map[Int, Int]()
+    /*
+     * iterating and finding missing triples per relation.
+     * properties here is the list of predicate ids
+     */
     properties.foreach {
       kv =>
+        /*
+         * for a subject in all entities get the expected cardinality and the
+         * actual cardinality and store the number of expected triples per
+         * relation.
+         */
         for (subject <- 0 to entityCount) {
           val expectedCardinality = getExpectedCardinality(ecpv, subject, kv)
           if (expectedCardinality != 0) {
             val actualCardinality = 0
+            /*
+             * isExisting and getSize methods iterate over a ArrayBuffer of maps.
+             * Note: The reason having ArrayBuffer is to emulate the functionality of
+             * MultiMaps. Normal maps cannot store duplicate keys and overwrite them.
+             */
             if (isExisting(pso(kv), subject)) {
               val actualCardinality = getSize(pso(kv), subject)
             }
             if (expectedCardinality > actualCardinality) {
-              if (number_of_expected_triple_per_relation.contains(kv)) {
-                val m = number_of_expected_triple_per_relation.apply(kv) + (expectedCardinality - actualCardinality)
-                number_of_expected_triple_per_relation.put(kv, m)
+              if (expectedTriplePerRelation.contains(kv)) {
+                val m = expectedTriplePerRelation.apply(kv) + (expectedCardinality - actualCardinality)
+                expectedTriplePerRelation.put(kv, m)
               } else {
-                number_of_expected_triple_per_relation.put(kv, (expectedCardinality - actualCardinality))
+                expectedTriplePerRelation.put(kv, (expectedCardinality - actualCardinality))
               }
             }
           }
         }
     }
+    /*
+     * Will start computing metrics support etc.
+     * The idea is to iterate all possible rule and body.
+     */
     val rules = ListBuffer[ScoredRule]()
-    val empty_entity_set = ArrayBuffer[Int]()
-
+    /*
+     * introducing breakable block to have a behaviour similar to break/continue.
+     * scala by default does not have the keyword 'continue' but we can emulate the
+     * continue functionality with placing breakable just after the loop starts and
+     * add break wherever we want. This breaks and finds an exception handling, if it
+     * does not find one it continues the loop for next iteration.
+     */
     properties.foreach {
       p =>
         properties.foreach {
@@ -85,40 +138,45 @@ object Algorithm {
                 breakable {
                   val rule = new ScoredRule(p, q, r)
                   var pcaSupport = 0.0
-                  val facts_added_by_subject_with_cardinality = LinkedHashMap[Int, Int]()
+                  /*
+                   * having facts added by subjects with cardinality
+                   */
+                  val subjectsWithCardinality = LinkedHashMap[Int, Int]()
                   pso.get(p).foreach {
-                    ab =>
-                      ab.foreach {
-                        ab2 =>
-                          val z_created = ArrayBuffer[Int]()
-                          ab2.foreach {
+                    arrBuf =>
+                      arrBuf.foreach {
+                        map =>
+                          val zAdded = ArrayBuffer[Int]()
+                          map.foreach {
                             xy =>
                               val x = xy._1
                               xy._2.foreach {
-                                l =>
-                                  var new_z_created = getObjects(pso(q), l)
-                                  //pso(q).getOrElse(y._1, empty_entity_set)
-                                  //z_created.add(new_z_created.asInstanceOf[Int])
-                                  z_created ++= new_z_created
-                                //println(z_created)
+                                y =>
+                                  var newZ = getObjects(pso(q), y)
+                                  zAdded ++= newZ
                               }
-                              if (!z_created.isEmpty) {
-                                val z_actual = getObjects(pso(r), x)
-                                val expects_cardinality = hasExpectedCardinality(ecpv, x, r)
-                                rule.body_support += z_created.size
-                                if (!z_actual.isEmpty) {
-                                  pcaSupport += z_created.size
+                              /*
+                               * find z and if it has expected cardinality update the subjects with cardinality
+                               * check if the actual z contains and increment the support. If the new z is added
+                               * then add consider it as partial and update pcaSupport(Partial Closed Assumption)
+                               */
+                              if (!zAdded.isEmpty) {
+                                val zActual = getObjects(pso(r), x)
+                                val expectCardinality = hasExpectedCardinality(ecpv, x, r)
+                                rule.bodySupport += zAdded.size
+                                if (!zActual.isEmpty) {
+                                  pcaSupport += zAdded.size
                                 }
-                                z_created.foreach {
+                                zAdded.foreach {
                                   z =>
-                                    if (z_actual.contains(z)) {
+                                    if (zActual.contains(z)) {
                                       rule.support = rule.support + 1
-                                    } else if (expects_cardinality) {
-                                      if (facts_added_by_subject_with_cardinality.contains(x)) {
-                                        val m = facts_added_by_subject_with_cardinality.apply(x) + 1
-                                        facts_added_by_subject_with_cardinality.put(x, m)
+                                    } else if (expectCardinality) {
+                                      if (subjectsWithCardinality.contains(x)) {
+                                        val m = subjectsWithCardinality.apply(x) + 1
+                                        subjectsWithCardinality.put(x, m)
                                       } else {
-                                        facts_added_by_subject_with_cardinality.put(x, 1)
+                                        subjectsWithCardinality.put(x, 1)
                                       }
 
                                     }
@@ -128,83 +186,94 @@ object Algorithm {
                           }
                       }
                   }
+                  // continue if the support is less than the min support
                   if (rule.support < MIN_SUPPORT) {
                     break
                   }
-                  rule.head_coverage = rule.support.asInstanceOf[Double] / property_instances_count(rule.r)
-                  if (rule.head_coverage < MIN_HEAD_COVERAGE) {
+                  // check for the headCoverage
+                  rule.headCoverage = rule.support.asInstanceOf[Double] / propertyInstances(rule.r)
+                  if (rule.headCoverage < MIN_HEAD_COVERAGE) {
                     break
                   }
-                  rule.standard_confidence = rule.support.asInstanceOf[Double] / rule.body_support
-                  if (rule.standard_confidence < MIN_STANDARD_CONFIDENCE) {
+                  // check for standard confidence
+                  rule.standardConfidence = rule.support.asInstanceOf[Double] / rule.bodySupport
+                  if (rule.standardConfidence < MIN_STANDARD_CONFIDENCE) {
                     break
                   }
-                  rule.pca_confidence = rule.support.asInstanceOf[Double] / pcaSupport
-                  var triple_added_to_missing_places_count = 0
-                  var triple_added_to_complete_places_count = 0
-                  facts_added_by_subject_with_cardinality.foreach {
+                  rule.pcaConfidence = rule.support.asInstanceOf[Double] / pcaSupport
+                  var tripleAddedToMissingPlaces = 0
+                  var tripleAddedToCompletePlaces = 0
+                  // update triples that were added to missing places and complete places
+                  subjectsWithCardinality.foreach {
                     t =>
                       val expected_cardinality = getExpectedCardinality(ecpv, t._1, rule.r)
                       if (expected_cardinality.asInstanceOf[Int] != 0) {
-                        val actual_triples_number = getSize(pso(rule.r),t._1)//pso(rule.r)(t._1).size
+                        val actualTriplesCount = getSize(pso(rule.r), t._1)
                         var missing_triples = 0
-                        if (expected_cardinality > actual_triples_number) {
-                          missing_triples = expected_cardinality - actual_triples_number
+                        if (expected_cardinality > actualTriplesCount) {
+                          missing_triples = expected_cardinality - actualTriplesCount
                         }
-                        val triples_added_by_the_rule = t._2
-                        if (triples_added_by_the_rule > missing_triples) {
-                          triple_added_to_missing_places_count += missing_triples
-                          triple_added_to_complete_places_count += triples_added_by_the_rule - missing_triples
+                        val triplesAddedByRule = t._2
+                        if (triplesAddedByRule > missing_triples) {
+                          tripleAddedToMissingPlaces += missing_triples
+                          tripleAddedToCompletePlaces += triplesAddedByRule - missing_triples
                         } else {
-                          triple_added_to_missing_places_count += triples_added_by_the_rule
+                          tripleAddedToMissingPlaces += triplesAddedByRule
                         }
                       } else {
                         println("No cardinality exists but still stored the facts")
                       }
                   }
-                  rule.completeness_confidence = rule.support / (rule.body_support - triple_added_to_missing_places_count).asInstanceOf[Double]
-                  rule.precision = 1 - triple_added_to_complete_places_count.asInstanceOf[Double] / rule.body_support
-                  if (number_of_expected_triple_per_relation.contains(rule.r)) {
-                    rule.recall = triple_added_to_missing_places_count.asInstanceOf[Double] / number_of_expected_triple_per_relation(rule.r)
+                  /*
+                   * computing all metrics with the mentioned equations in the paper.
+                   */
+                  rule.completenessConfidence = rule.support / (rule.bodySupport - tripleAddedToMissingPlaces).asInstanceOf[Double]
+                  rule.precision = 1 - tripleAddedToCompletePlaces.asInstanceOf[Double] / rule.bodySupport
+                  if (expectedTriplePerRelation.contains(rule.r)) {
+                    rule.recall = tripleAddedToMissingPlaces.asInstanceOf[Double] / expectedTriplePerRelation(rule.r)
                   } else {
                     rule.recall = Double.NaN
                   }
-                  if ((triple_added_to_complete_places_count + triple_added_to_missing_places_count) != 0) {
-                    rule.directional_metric =
-                      (triple_added_to_missing_places_count - triple_added_to_complete_places_count).asInstanceOf[Double] /
-                        (2 * (triple_added_to_missing_places_count + triple_added_to_complete_places_count)) + 0.5
+                  if ((tripleAddedToCompletePlaces + tripleAddedToMissingPlaces) != 0) {
+                    rule.directionalMetric =
+                      (tripleAddedToMissingPlaces - tripleAddedToCompletePlaces).asInstanceOf[Double] /
+                        (2 * (tripleAddedToMissingPlaces + tripleAddedToCompletePlaces)) + 0.5
                   } else {
-                    rule.directional_metric = Double.NaN
+                    rule.directionalMetric = Double.NaN
                   }
-                  val possible_relations_num = entityCount * entityCount
-                  var expected_incomplete = 0
-                  var expected_complete = 0
-                  if (number_of_expected_triple_per_relation.contains(rule.r)) {
-                    expected_incomplete = number_of_expected_triple_per_relation(rule.r) / possible_relations_num
-                    expected_complete = (possible_relations_num - number_of_expected_triple_per_relation(rule.r) - property_instances_count(rule.r)) / possible_relations_num
+                  /*
+                   * As evaluation we compute the number of conplete and incomplete for given number of possible relations
+                   */
+                  val numPossibleRelations = entityCount * entityCount
+                  var expectedIncomplete = 0
+                  var expectedComplete = 0
+                  if (expectedTriplePerRelation.contains(rule.r)) {
+                    expectedIncomplete = expectedTriplePerRelation(rule.r) / numPossibleRelations
+                    expectedComplete = (numPossibleRelations - expectedTriplePerRelation(rule.r) - propertyInstances(rule.r)) / numPossibleRelations
                   }
-                  val actual_complete = triple_added_to_complete_places_count.asInstanceOf[Double] / rule.body_support
-                  val actual_incomplete = triple_added_to_missing_places_count.asInstanceOf[Double] / rule.body_support
-                  if (actual_complete == 0 || expected_incomplete == 0) {
-                    rule.directional_coef = Float.MaxValue
+                  val complete = tripleAddedToCompletePlaces.asInstanceOf[Double] / rule.bodySupport
+                  val incomplete = tripleAddedToMissingPlaces.asInstanceOf[Double] / rule.bodySupport
+                  if (complete == 0 || expectedIncomplete == 0) {
+                    rule.directionalCoef = Float.MaxValue
                   } else {
-                    rule.directional_coef = 0.5 * expected_complete / actual_complete + 0.5 * actual_incomplete / expected_incomplete
+                    rule.directionalCoef = 0.5 * expectedComplete / complete + 0.5 * incomplete / expectedIncomplete
                   }
                   rules += rule
                 }
             }
         }
     }
+    // sort with completeness confidence
     rules.sortWith { (a: ScoredRule, b: ScoredRule) =>
-      a.completeness_confidence > b.completeness_confidence
+      a.completenessConfidence > b.completenessConfidence
     }
+    // copy the num rules mentioned or rules size: which ever is smallest
     val limit = scala.math.min(numRules, rules.size)
     val result = ListBuffer[ScoredRule]()
     for (i <- 0 until limit) {
       result += rules(i)
     }
     return result
-
   }
 
 }
