@@ -30,7 +30,7 @@ This project also contains `build.sbt`.
 	sbt compile
 	sbt run
 	```	
-	Note: If you face memeory issues or GC overhead errors increase the virtual machine's memory by setting and running the following command.
+	Note: If you face memory issues or GC overhead errors increase the virtual machine's memory by setting and running the following command.
 	```sh
 	env JAVA_OPTS="-Xmx[MAX_HEAP_SPACE]m" sbt run 
 	```
