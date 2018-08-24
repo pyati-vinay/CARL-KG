@@ -145,7 +145,7 @@ object Preprocessor {
     val file = new File("output.tsv")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write("p\tq\tr\tSupport\tBodySupport\tHeadCoverage\tStdConf\tPCAconf\tCompleteConf\tPrecision\tRecall"
-      + "\tDirMetric\tDirCoef\tRuleEval\n")
+      + "\tDirMetric\tDirCoef\n")
     // formatting output in the output file
     outputRules.foreach {
       rule =>
